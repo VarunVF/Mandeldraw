@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 import pygame
 
+import formulas
 from formulas import mandelbrot
 
 
@@ -11,7 +12,8 @@ pygame.init()
 SCALE = 0.004
 SCREEN_SIZE = (800, 600)
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
-MAX_DEPTH = 20
+MAX_DEPTH = 15
+UPDATE_AFTER_LINES = 50
 # shift coordinate system downward and rightward, as top-left is (0, 0)
 X_SHIFT = -int(SCREEN_WIDTH / 2)
 Y_SHIFT = -int(SCREEN_HEIGHT / 2)
@@ -39,13 +41,17 @@ def transform(x_coord: int,
 
 def color(surface: pygame.Surface,
           formula: Callable[[float, float, int], complex],
-          max_depth: int = MAX_DEPTH):
+          max_depth: int = MAX_DEPTH,
+          do_update: bool = True,
+          update_after_lines: int = UPDATE_AFTER_LINES):
     """
     Colors a Surface based on existence in the Mandelbrot or multibrot set.
     Points that diverge at different depths will be colored differently.
     :param surface: surface to be colored
     :param formula: recursive formula to be used, in function form
     :param max_depth: maximum number of iterations for which the formula will be applied
+    :param do_update: progressively update the surface as colors are calculated
+    :param update_after_lines: number of lines after which to update the surface
     :return:
     """
     surface.lock()
@@ -56,7 +62,8 @@ def color(surface: pygame.Surface,
                 r = 255 * (max_depth - n - 1) / max_depth
                 if formula(x_param, y_param, n):
                     surface.set_at((x, y), (r, 0, 0))
-        pygame.display.update()
+        if do_update and x % update_after_lines == 0:
+            pygame.display.update()
     surface.unlock()
 
 
@@ -66,7 +73,8 @@ if __name__ == '__main__':
     pygame.display.set_caption("Mandelbrot Set Visualisation")
     clock = pygame.Clock()
 
-    color(screen, mandelbrot)
+    func = formulas.get_multibrot_func(2.3)
+    color(screen, func)
 
     while True:
         for event in pygame.event.get():
